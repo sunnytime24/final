@@ -3,35 +3,30 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from openai import OpenAI
-import os
-from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import httpx
 
-load_dotenv()
-
 # OpenAI 클라이언트 설정
 try:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        st.error("OpenAI API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.")
-        client = None
-    else:
+    if 'openai' in st.secrets:
         client = OpenAI(
-            api_key=api_key,
+            api_key=st.secrets['openai']['api_key'],
             http_client=httpx.Client(
                 timeout=httpx.Timeout(60.0, connect=5.0)
             )
         )
+    else:
+        st.error("OpenAI API 키가 설정되지 않았습니다. Streamlit Cloud의 Secrets에서 설정해주세요.")
+        client = None
 except Exception as e:
     st.error(f"OpenAI 클라이언트 초기화 중 오류가 발생했습니다: {str(e)}")
     client = None
 
 # 이메일 설정
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_ADDRESS = st.secrets.get("email", {}).get("gmail_user")
+EMAIL_PASSWORD = st.secrets.get("email", {}).get("admin_email")
 
 def send_reminder_email(recipient_email, name):
     subject = "설문조사 참여 안내"
